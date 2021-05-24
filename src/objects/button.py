@@ -5,7 +5,6 @@ class Button(pygame.sprite.Sprite):
     def __init__(self, position, img, width, height):
         pygame.sprite.Sprite.__init__(self)
         self.position = position
-        self.img = img
         self.width = width
         self.height = height
         self.image = pygame.image.load(img)

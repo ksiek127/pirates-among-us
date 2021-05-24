@@ -13,36 +13,18 @@ from objects.parameters import Parameters
 from objects.background import Background
 from objects.task import Task
 from objects.report_button import ReportButton
-from objects.wall import Wall
+from assets import Assets
 
 pygame.init()
-
-GREEN = (20, 255, 140)
-GREY = (210, 210, 210)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-PURPLE = (255, 0, 255)
-BLACK = (255, 255, 0)
-
-font = pygame.font.SysFont("arial", 50)
-menu_img = pygame.image.load("../assets/menu.png")
-lobby_img = pygame.image.load("../assets/menu.png")
-voting_img = pygame.image.load("../assets/voting.png")
-task_img = pygame.image.load("../assets/task.png")
-report_btn_img = pygame.image.load("../assets/report_button.png")
-portal_img = pygame.image.load("../assets/portal.png")
-display_width = 1200
-display_height = 900
-size = (display_width, display_height)
+a = Assets()
+size = (a.display_width, a.display_height)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("AMONGUS3")
-
 parameters = Parameters(player_speed=5, crewmate_vision=500, impostor_vision=750, impaired_vision=50, vote_time=180,
-                        kill_cooldown=30,
-                        kill_distance='short', common_tasks=1, long_tasks=2, short_tasks=5)
-
+                        kill_distance=300)
 impostor_vision = parameters.impostor_vision
 crewmate_vision = parameters.crewmate_vision
+who_won = "nobody"
 
 lobby_buttons = pygame.sprite.Group()
 voting_buttons = pygame.sprite.Group()
@@ -50,21 +32,13 @@ voting_buttons = pygame.sprite.Group()
 start_btn = Button([500, 600], "../assets/startbutton.PNG", 250, 100)
 lobby_buttons.add(start_btn)
 
-skip_btn = Button([100, 550], "../assets/skipbutton.png", 150, 75)
+skip_btn = Button([100, 700], "../assets/skipbutton.png", 150, 75)
 voting_buttons.add(skip_btn)
 voting_players_buttons = []
 
 tasks_sprites = pygame.sprite.Group()
 tasks_no = 10
 tasks = []
-tasks_positions = [[100, 200], [500, 200], [1100, 200],
-                   [100, 600], [500, 600], [1100, 600],
-                   [100, 1000], [500, 1000], [1100, 1000],
-                   [100, 1400]]
-
-trap_positions = [
-    [-100, 300], [100, 300]
-]
 
 radius = 50
 
@@ -80,81 +54,14 @@ corpses_list = []
 corpses_positions_list = []
 death_positions_list = []
 
-game_map = Background("../assets/mapp.png", display_width, display_height)
+game_map = Background("../assets/mapp.png", a.display_width, a.display_height)
 backgrounds = pygame.sprite.Group()
 backgrounds.add(game_map)
-
-walls = [
-    Wall([-10, 240], [290, 420]),
-    Wall([200, 420], [260, 630]),
-    Wall([200, 630], [530, 990]),
-    Wall([470, 870], [830, 1500]),
-    Wall([-700, -120], [260, 120]),
-    Wall([260, -300], [470, -30]),
-    Wall([470, -330], [1280, -210]),
-    Wall([1250, -300], [1550, 60]),
-    Wall([1550, 60], [2180, 270]),
-    Wall([2180, 270], [2960, 780]),
-    Wall([2960, 750], [3170, 1230]),
-    Wall([2420, 750], [2690, 930]),
-    Wall([2180, 1230], [3500, 1980]),
-    Wall([1640, 1860], [1790, 2040]),
-    Wall([1730, 2040], [1820, 2580]),
-    Wall([1100, 2310], [1730, 2580]),
-    Wall([1100, 1890], [1430, 2010]),
-    Wall([1100, 1950], [1190, 2340]),
-    Wall([620, 2400], [1100, 2610]),
-    Wall([350, 2160], [620, 2430]),
-    Wall([-460, 2160], [380, 2430]),
-    Wall([-700, 1770], [-460, 2130]),
-    Wall([-1090, 2040], [-670, 2190]),
-    Wall([-1150, 1980], [-1060, 2160]),
-    Wall([-1330, 1230], [-1150, 2100]),
-    Wall([-1150, 1050], [-1000, 1440]),
-    Wall([-790, 1050], [-640, 1410]),
-    Wall([-700, 1230], [-190, 1680]),
-    Wall([-250, 1620], [-190, 2010]),
-    Wall([20, 1860], [350, 2040]),
-    Wall([200, 1770], [350, 1890]),
-    Wall([290, 1500], [350, 1770]),
-    Wall([290, 1020], [440, 1530]),
-    Wall([-340, 960], [440, 1230]),
-    Wall([-790, 510], [-610, 960]),
-    Wall([-700, 240], [-280, 780]),
-    Wall([-370, 780], [-160, 990]),
-    Wall([-280, 240], [-190, 360]),
-    Wall([-1720, 1380], [-1330, 1530]),
-    Wall([-1720, 480], [-1510, 1470]),
-    Wall([-1510, -150], [-1270, 540]),
-    Wall([-1330, 540], [-970, 690]),
-    Wall([-1180, 690], [-1000, 930]),
-    Wall([-1270, -120], [-1090, 390]),
-    Wall([-1090, -240], [-730, -30]),
-    Wall([1010, 870], [1460, 1170]),
-    Wall([1250, 750], [1460, 990]),
-    Wall([1460, 600], [1640, 840]),
-    Wall([1550, 330], [1790, 630]),
-    Wall([1790, 420], [1910, 630]),
-    Wall([1910, 510], [1970, 690]),
-    Wall([1400, 960], [1970, 1170]),
-    Wall([1910, 870], [2240, 1050]),
-    Wall([1820, 1050], [1970, 1620]),
-    Wall([1010, 1320], [1250, 1440]),
-    Wall([1100, 1440], [1250, 1710]),
-    Wall([1100, 1590], [1880, 1740]),
-    Wall([1730, 1500], [1820, 1620])
-         ]
-
-# tymczasowe cialo martwego gracza
 dead_image = pygame.Surface([50, 50])
 dead_image.fill((0, 0, 0))
 dead_img = pygame.image.load("../assets/dead_img.png")
-
-# tymczasowy duszek martwego gracza
 ghost_image = pygame.Surface([50, 50])
 ghost_image.fill((0, 0, 255))
-
-# tymczasowy impo
 impostor_image = pygame.Surface([50, 50])
 impostor_image.fill((255, 0, 0))
 
@@ -162,11 +69,11 @@ impostor_image.fill((255, 0, 0))
 def set_tasks(p):
     if p.role == "crewmate":
         for i in range(tasks_no):
-            task = Task(tasks_positions[i], 50, 75, radius, "task")
+            task = Task(a.tasks_positions[i], 50, 75, radius, "task")
             tasks.append(task)
             tasks_sprites.add(task)
     else:
-        for trap_pos in trap_positions:
+        for trap_pos in a.trap_positions:
             trap = Task(trap_pos, 50, 75, radius, "trap")
             tasks.append(trap)
             tasks_sprites.add(trap)
@@ -176,7 +83,7 @@ def set_tasks(p):
 def create_voting_buttons(players_list):
     voting_buttons.add(skip_btn)
 
-    x, y, x_diff, y_diff = 150, 125, 500, 85
+    x, y, x_diff, y_diff = 150, 125, 500, 120
     voting_buttons_positions = [[x + (i * x_diff), y + (j * y_diff)] for i in range(2) for j in range(5)]
 
     for i in range(10):
@@ -263,9 +170,9 @@ class GameState:
                         else:
                             text += event.unicode
 
-            screen.blit(menu_img, (0, 0))
+            screen.blit(a.menu_img, (0, 0))
 
-            txt_surface = font.render(text, True, color)
+            txt_surface = a.font.render(text, True, color)
             screen.blit(txt_surface, (input_box.x + 5, input_box.y - 4))
             pygame.draw.rect(screen, color, input_box, 2)
 
@@ -295,7 +202,7 @@ class GameState:
                     if start_btn.pressed(mouse_pos):
                         p.in_game = True
 
-            screen.blit(lobby_img, (0, 0))
+            screen.blit(a.lobby_img, (0, 0))
             lobby_buttons.draw(screen)
             pygame.display.update()
 
@@ -374,7 +281,7 @@ class GameState:
                             else:
                                 print("Martwi nie glosuja")
 
-            screen.blit(voting_img, (0, 0))
+            screen.blit(a.voting_img, (0, 0))
             voting_buttons.draw(screen)
             pygame.display.update()
 
@@ -382,8 +289,26 @@ class GameState:
         while True:
             global crewmate_vision  # TO MA WYLECIEC POZNIEJ
             global impostor_vision
+            global who_won
             p = n.p
             players_list = n.send(p)
+            impostors_alive = 0
+            crewmates_alive = 0
+            for player in players_list:
+                if not player.is_dead:
+                    if player.role == "impostor":
+                        impostors_alive += 1
+                    else:
+                        crewmates_alive += 1
+            if impostors_alive == 0:
+                who_won = "crewmates"
+                self.state = "endgame"
+                self.state_manager()
+            if crewmates_alive == 0 or impostors_alive == crewmates_alive:
+                who_won = "impostors"
+                self.state = "endgame"
+                self.state_manager()
+
             for player in players_list:
                 # czy jestem martwy
                 if not p.is_dead:
@@ -442,7 +367,6 @@ class GameState:
                                 p.start_task(t)
                                 break
                     elif event.key == pygame.K_q:  # kill
-
                         if not p.is_dead and p.role == "impostor" and p.cant_kill_until <= datetime.now():
                             for other_player in players_list:
                                 if other_player.id != p.id and not other_player.is_dead and other_player.role == "crewmate":
@@ -489,7 +413,7 @@ class GameState:
             corpses_sprites.update()
             backgrounds.update()
             game_map.move()  # przesuwanie mapy
-            if p.collides(walls):
+            if p.collides(a.walls):
                 p.unmove()
                 game_map.unmove()
             game_map.show(screen)
@@ -565,7 +489,7 @@ class GameState:
                             t.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    t.show(screen, task_img, tmp_screen_pos)
+                    t.show(screen, a.task_img, tmp_screen_pos)
 
             for portal in portals:  # wyswietlanie portali
                 if p.role == "impostor":
@@ -576,7 +500,7 @@ class GameState:
                             portal.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    portal.show(screen, portal_img, tmp_screen_pos)
+                    portal.show(screen, a.portal_img, tmp_screen_pos)
 
             if p.role != "impostor":  # wyswietlanie przycisku glosowania
                 vision = crewmate_vision
@@ -584,21 +508,25 @@ class GameState:
                                  report_btn.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    report_btn.show(screen, report_btn_img,  tmp_screen_pos)
+                    report_btn.show(screen, a.report_btn_img,  tmp_screen_pos)
             else:
                 vision = impostor_vision
                 position_diff = [report_btn.position[0] - p.position[0],
                                  report_btn.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    report_btn.show(screen, report_btn_img,  tmp_screen_pos)
+                    report_btn.show(screen, a.report_btn_img,  tmp_screen_pos)
 
             # players.draw(screen)
             pygame.display.update()
             n.p = p
 
     def endgame(self):
-        pass
+        global who_won
+        if who_won == "crewmates":
+            screen.blit(a.crewmates_won, (0, 0))
+        else:
+            screen.blit(a.impostors_won, (0, 0))
 
     def state_manager(self):
         if self.state == 'menu':
@@ -616,9 +544,9 @@ class GameState:
 if __name__ == "__main__":
     n = Network()
     clock = pygame.time.Clock()
-    p1_image = pygame.Surface([50, 50])
-    p1_image.fill((255, 0, 255))
-    images = [p1_image] * 10  # TODO: ladowac obrazki normalnie
+    player_image = pygame.Surface([50, 50])
+    player_image.fill((255, 0, 255))
+    images = [player_image] * 10
 
     game_state = GameState('menu')
     players = pygame.sprite.Group()

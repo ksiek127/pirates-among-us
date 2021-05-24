@@ -1,5 +1,3 @@
-import pygame
-
 from objects.map_object import MapObject
 
 

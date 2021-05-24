@@ -33,18 +33,6 @@ class Player(pygame.sprite.Sprite):
         self.dead_bodies = []
         self.dead_bodies_positions = []
 
-    def move_right(self):
-        self.position[0] += self.velocity
-
-    def move_left(self):
-        self.position[0] -= self.velocity
-
-    def move_up(self):
-        self.position[1] -= self.velocity
-
-    def move_down(self):
-        self.position[1] += self.velocity
-
     def move(self):
         self.position[0] += self.x_change
         self.position[1] += self.y_change
@@ -97,11 +85,6 @@ class Player(pygame.sprite.Sprite):
 
     def end_kill_cooldown(self):
         self.cant_kill_until = -1
-
-    def remove_lights(self):
-        for t in self.tasks:
-            if t.task_type == "lights":
-                self.tasks.remove(t)
 
     def collides(self, walls):
         for wall in walls:

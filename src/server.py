@@ -62,7 +62,7 @@ def set_roles():
 
 def set_impostor(index):
     players[index].role = "impostor"
-    players[index].kill_cooldown = timedelta(seconds=10)
+    players[index].kill_cooldown = timedelta(seconds=2)
     players[index].kill_distance = 100
 
 

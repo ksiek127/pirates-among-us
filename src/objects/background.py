@@ -19,12 +19,6 @@ class Background(pygame.sprite.Sprite):
     def show(self, screen):
         screen.blit(self.img, (self.x + self.x_offset, self.y + self.y_offset))
 
-    # def update_position(self, player):
-    #     player_x, player_y = player.position
-    #     player_w, player_h = player.image.get_rect().size
-    #     self.x = player_x+player_w/2 - self.width/2
-    #     self.y = player_y+player_h/2 - self.height/2
-
     def move(self):
         self.x_offset += self.x_change
         self.y_offset += self.y_change
@@ -32,7 +26,3 @@ class Background(pygame.sprite.Sprite):
     def unmove(self):
         self.x_offset -= self.x_change
         self.y_offset -= self.y_change
-
-    # def update_position(self):
-    #     self.rect.x += self.x_change
-    #     self.rect.y += self.y_change
