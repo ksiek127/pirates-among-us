@@ -7,6 +7,7 @@ from datetime import timedelta
 
 # server = "192.168.1.94"  # Asia
 server = "192.168.1.61"  # K
+# server = "192.168.1.102" # K2
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,23 +27,23 @@ already_set_roles = False
 
 players = [Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=0),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[1000, 300],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=1),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[700, 300],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=2),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[1080, 300],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=3),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[900, 300],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=4),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[900, 200],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=5),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[700, 200],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=6),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[1040, 200],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=7),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 200],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=8),
-           Player(screen_pos=[display_width // 2, display_height // 2], position=[1160, 200],
+           Player(screen_pos=[display_width // 2, display_height // 2], position=[800, 300],
                   role="crewmate", cooldown=-1, kill_distance=-1, id=9)
            ]
 
