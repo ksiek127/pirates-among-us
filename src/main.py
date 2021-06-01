@@ -22,10 +22,6 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("AMONGUS3")
 parameters = Parameters(player_speed=5, crewmate_vision=500, impostor_vision=750, impaired_vision=50, vote_time=180,
                         kill_distance=300)
-impostor_vision = parameters.impostor_vision
-crewmate_vision = parameters.crewmate_vision
-who_won = "nobody"
-
 lobby_buttons = pygame.sprite.Group()
 voting_buttons = pygame.sprite.Group()
 
@@ -130,9 +126,265 @@ def remove_corpses():
     corpses_list.clear()
 
 
+def quit_handler(event):
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        quit()
+
+
+def vote(p, event):
+    mouse_pos = event.pos
+    if skip_btn.pressed(mouse_pos):
+        if not p.is_dead:
+            p.voted_for = -2  # "SKIP"
+            print("skipujemy!")
+        else:
+            print("Martwi nie glosuja")
+    for btn in voting_players_buttons:
+        if btn.pressed(mouse_pos):
+            if not p.is_dead:
+                p.voted_for = btn.id
+                print("go", btn.id)
+            else:
+                print("Martwi nie glosuja")
+
+
+def check_if_endgame(players_list, game_state):
+    impostors_alive = 0
+    crewmates_alive = 0
+    for player in players_list:
+        if not player.is_dead:
+            if player.role == "impostor":
+                impostors_alive += 1
+            else:
+                crewmates_alive += 1
+    if impostors_alive == 0:
+        game_state.who_won = "crewmates"
+        game_state.state = "endgame"
+        game_state.state_manager()
+    if crewmates_alive == 0 or impostors_alive == crewmates_alive:
+        game_state.who_won = "impostors"
+        game_state.state = "endgame"
+        game_state.state_manager()
+
+
+def move_handler(p, event):
+    if event.key == pygame.K_LEFT:
+        p.x_change -= p.velocity
+        game_map.x_change += p.velocity
+    elif event.key == pygame.K_RIGHT:
+        p.x_change += p.velocity
+        game_map.x_change -= p.velocity
+    elif event.key == pygame.K_DOWN:
+        p.y_change += p.velocity
+        game_map.y_change -= p.velocity
+    elif event.key == pygame.K_UP:
+        p.y_change -= p.velocity
+        game_map.y_change += p.velocity
+
+
+def task_handler(p, event):
+    if event.key == pygame.K_SPACE:  # chce robic taska
+        p.y_change = 0  # zatrzymanie gracza
+        game_map.y_change = 0
+        p.x_change = 0
+        game_map.x_change = 0
+
+        for t in p.tasks:
+            if t.is_near(p.position):  # czy jest w okolicy taska
+                pygame.display.update()
+                p.start_task(t)
+                break
+
+
+def kill_handler(p, event, players_list):
+    if event.key == pygame.K_q:  # kill
+        if not p.is_dead and p.role == "impostor" and p.cant_kill_until <= datetime.now():
+            for other_player in players_list:
+                if other_player.id != p.id and not other_player.is_dead and other_player.role == "crewmate":
+                    if p.am_i_near(other_player.position):
+                        p.start_kill_cooldown()
+                        print("I killed", other_player.id)
+                        p.dead_bodies.append(other_player.id)
+                        p.dead_bodies_positions.append(other_player.position)
+                        break
+
+
+def report_handler(p, event):
+    if event.key == pygame.K_r:  # report
+        if not p.is_dead:
+            for corpse in corpses_list:
+                if corpse.is_near(p.position):
+                    p.in_meeting = True
+            if report_btn.is_near(p.position):
+                p.in_meeting = True
+
+
+def portal_handler(p, event):
+    if event.key == pygame.K_p:  # portal
+        if p.role == "impostor":
+            p.y_change = 0  # zatrzymanie gracza
+            game_map.y_change = 0
+            p.x_change = 0
+            game_map.x_change = 0
+
+            for portal in portals:
+                if portal.is_near(p.position):  # czy jest w okolicy portalu
+                    game_map.x_offset -= portal.where_teleports[0] - p.position[0]
+                    game_map.y_offset -= portal.where_teleports[1] - p.position[1]
+                    p.position[0] = portal.where_teleports[0]
+                    p.position[1] = portal.where_teleports[1]
+
+
+def stop_moving_handler(p, event):
+    if event.key == pygame.K_DOWN or event.key == pygame.K_UP:
+        p.y_change = 0
+        game_map.y_change = 0
+
+    elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+        p.x_change = 0
+        game_map.x_change = 0
+
+
+def check_traps(p, players_list):  # czy gracz wszedl w pulapke
+    if p.role != "impostor":
+        for player in players_list:
+            if player.role == "impostor":
+                for trap_pos in player.set_traps:
+                    position_diff = [trap_pos[0] - p.position[0],
+                                     trap_pos[1] - p.position[1]]
+                    if abs(position_diff[0]) <= radius and abs(position_diff[1]) <= radius:
+                        p.is_dead = True
+
+
+def check_is_dead(p, player):
+    if not p.is_dead:
+        if p.id in player.dead_bodies:
+            p.is_dead = True
+
+
+def check_if_meeting(player, p, game_state):
+    # czy start zebranie
+    if player.in_meeting:
+        p.break_task()
+        p.in_meeting = True
+        if p.role == "impostor":
+            p.set_traps = []  # podczas zebrania gracze orientuja sie o pulapce i przestaja w nia wpadac
+            # (pulapke juz nie jest aktywna)
+        game_state.state = 'voting'
+        game_state.state_manager()
+
+
+def check_task(p, players_list):
+    if p.in_task:  # czy gracz skonczyl taska
+        if p.task_until <= datetime.now():
+            if p.task.task_type == "trap":  # zastawiona pulapka
+                for player in players_list:
+                    if player.role != "impostor":
+                        p.set_traps.append(p.task.position)
+            p.end_task()
+
+
+def show_players(p, players_list):
+    for i in range(len(players_list)):  # wyswietlanie graczy
+        if players_list[i].id == p.id:
+            if p.is_dead:
+                players_list[i].show(screen, ghost_image, p.screen_pos)
+            else:
+                if p.role == "impostor":
+                    players_list[i].show(screen, impostor_image, p.screen_pos)
+                else:
+                    players_list[i].show(screen, images[i], p.screen_pos)
+
+        else:
+            if p.role == "impostor":
+                vision = parameters.impostor_vision
+            else:
+                vision = parameters.crewmate_vision
+            position_diff = [players_list[i].position[0] - p.position[0],
+                             players_list[i].position[1] - p.position[1]]
+            if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+                tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+                if p.is_dead:
+                    if players_list[i].is_dead:
+                        players_list[i].show(screen, ghost_image, tmp_screen_pos)
+                    elif players_list[i].role == "impostor":
+                        players_list[i].show(screen, impostor_image, tmp_screen_pos)
+                    else:
+                        players_list[i].show(screen, images[i], tmp_screen_pos)
+                else:
+                    if not players_list[i].is_dead:
+                        if players_list[i].role == "impostor" and p.role == "impostor":
+                            players_list[i].show(screen, impostor_image, tmp_screen_pos)
+                        else:
+                            players_list[i].show(screen, images[i], tmp_screen_pos)
+
+
+def show_corpses(p):
+    for corpse in corpses_list:  # wyswietlanie cial
+        if p.role != "impostor":
+            vision = parameters.crewmate_vision
+            position_diff = [corpse.position[0] - p.position[0],
+                             corpse.position[1] - p.position[1]]
+            if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+                tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+                corpse.show(screen, dead_image, tmp_screen_pos)
+        else:
+            vision = parameters.impostor_vision
+            position_diff = [corpse.position[0] - p.position[0],
+                             corpse.position[1] - p.position[1]]
+            if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+                tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+                corpse.show(screen, dead_image, tmp_screen_pos)
+
+
+def show_tasks(p):
+    for t in p.tasks:  # wyswietlanie taskow, pulapek
+        if p.role == "impostor":
+            vision = parameters.impostor_vision
+        else:
+            vision = parameters.crewmate_vision
+        position_diff = [t.position[0] - p.position[0],
+                         t.position[1] - p.position[1]]
+        if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+            tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+            t.show(screen, a.task_img, tmp_screen_pos)
+
+
+def show_portals(p):
+    for portal in portals:  # wyswietlanie portali
+        if p.role == "impostor":
+            vision = parameters.impostor_vision
+        else:
+            vision = parameters.crewmate_vision
+        position_diff = [portal.position[0] - p.position[0],
+                         portal.position[1] - p.position[1]]
+        if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+            tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+            portal.show(screen, a.portal_img, tmp_screen_pos)
+
+
+def show_report_button(p):
+    if p.role != "impostor":  # wyswietlanie przycisku glosowania
+        vision = parameters.crewmate_vision
+        position_diff = [report_btn.position[0] - p.position[0],
+                         report_btn.position[1] - p.position[1]]
+        if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+            tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+            report_btn.show(screen, a.report_btn_img, tmp_screen_pos)
+    else:
+        vision = parameters.impostor_vision
+        position_diff = [report_btn.position[0] - p.position[0],
+                         report_btn.position[1] - p.position[1]]
+        if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
+            tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
+            report_btn.show(screen, a.report_btn_img, tmp_screen_pos)
+
+
 class GameState:
     def __init__(self, state):
         self.state = state
+        self.who_won = "nobody"
 
     def menu(self):
         input_box = pygame.Rect(350, 700, 500, 50)
@@ -146,9 +398,7 @@ class GameState:
             p = n.p
             players_list = n.send(p)
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+                quit_handler(event)
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
@@ -185,7 +435,7 @@ class GameState:
             for player in players_list:
                 if player.in_game:
                     p.role = players_list[p.id].role
-                    p.kill_distance = players_list[p.id].kill_distance
+                    p.kill_distance = players_list[p.id].kill_distance  # czemu nie z parametrow?
                     p.kill_cooldown = players_list[p.id].kill_cooldown
                     p.in_game = True
                     set_tasks(p)
@@ -193,9 +443,7 @@ class GameState:
                     self.state_manager()
 
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+                quit_handler(event)
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
@@ -220,16 +468,13 @@ class GameState:
         while True:
             p = n.p
             players_list = n.send(p)
-
+            only_one_loser = True
             votes_dict = {}
+            loser = -1
+            max_votes = 0
             for i in range(len(players_list)):
                 votes_dict[i] = 0
             counter = 0
-
-            loser = -1
-            max_votes = 0
-            only_one_loser = True
-
             for player in players_list:
                 if player.voted_for != -1 and player.voted_for != -2:
                     votes = votes_dict.pop(player.voted_for)
@@ -243,8 +488,7 @@ class GameState:
                     counter += 1
                 elif player.voted_for == -2:  # SKIP
                     counter += 1
-
-            if(counter == alive_players):
+            if counter == alive_players:
                 if only_one_loser:
                     print("bye bye", loser)
                     if p.role == "impostor":
@@ -262,24 +506,9 @@ class GameState:
                 self.state_manager()
 
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+                quit_handler(event)
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = event.pos
-                    if skip_btn.pressed(mouse_pos):
-                        if not p.is_dead:
-                            p.voted_for = -2  # "SKIP"
-                            print("skipujemy!")
-                        else:
-                            print("Martwi nie glosuja")
-                    for btn in voting_players_buttons:
-                        if btn.pressed(mouse_pos):
-                            if not p.is_dead:
-                                p.voted_for = btn.id
-                                print("go", btn.id)
-                            else:
-                                print("Martwi nie glosuja")
+                    vote(p, event)
 
             screen.blit(a.voting_img, (0, 0))
             voting_buttons.draw(screen)
@@ -287,129 +516,31 @@ class GameState:
 
     def main_game(self):
         while True:
-            global crewmate_vision  # TO MA WYLECIEC POZNIEJ
-            global impostor_vision
-            global who_won
             p = n.p
             players_list = n.send(p)
-            impostors_alive = 0
-            crewmates_alive = 0
-            for player in players_list:
-                if not player.is_dead:
-                    if player.role == "impostor":
-                        impostors_alive += 1
-                    else:
-                        crewmates_alive += 1
-            if impostors_alive == 0:
-                who_won = "crewmates"
-                self.state = "endgame"
-                self.state_manager()
-            if crewmates_alive == 0 or impostors_alive == crewmates_alive:
-                who_won = "impostors"
-                self.state = "endgame"
-                self.state_manager()
+            check_if_endgame(players_list, self)
 
             for player in players_list:
-                # czy jestem martwy
-                if not p.is_dead:
-                    if p.id in player.dead_bodies:
-                        p.is_dead = True
-                # czy start zebranie
-                if player.in_meeting:
-                    p.break_task()
-                    p.in_meeting = True
-                    if p.role == "impostor":
-                        p.set_traps = []  # podczas zebrania gracze orientuja sie o pulapce i przestaja w nia wpadac
-                        # (pulapke juz nie jest aktywna)
-                    self.state = 'voting'
-                    self.state_manager()
+                check_is_dead(p, player)
+                check_if_meeting(player, p, self)
                 # zliczanie cial
                 if player.role == "impostor":
                     count_impostor_bodies(player)
-
-            # czy gracz wszedl w pulapke
-            if p.role != "impostor":
-                for player in players_list:
-                    if player.role == "impostor":
-                        for trap_pos in player.set_traps:
-                            position_diff = [trap_pos[0] - p.position[0],
-                                             trap_pos[1] - p.position[1]]
-                            if abs(position_diff[0]) <= radius and abs(position_diff[1]) <= radius:
-                                p.is_dead = True
+            check_traps(p, players_list)
 
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
-
+                quit_handler(event)
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        p.x_change -= p.velocity
-                        game_map.x_change += p.velocity
-                    elif event.key == pygame.K_RIGHT:
-                        p.x_change += p.velocity
-                        game_map.x_change -= p.velocity
-                    elif event.key == pygame.K_DOWN:
-                        p.y_change += p.velocity
-                        game_map.y_change -= p.velocity
-                    elif event.key == pygame.K_UP:
-                        p.y_change -= p.velocity
-                        game_map.y_change += p.velocity
-                    elif event.key == pygame.K_SPACE:  # chce robic taska
-                        p.y_change = 0  # zatrzymanie gracza
-                        game_map.y_change = 0
-                        p.x_change = 0
-                        game_map.x_change = 0
-
-                        for t in p.tasks:
-                            if t.is_near(p.position):  # czy jest w okolicy taska
-                                pygame.display.update()
-                                p.start_task(t)
-                                break
-                    elif event.key == pygame.K_q:  # kill
-                        if not p.is_dead and p.role == "impostor" and p.cant_kill_until <= datetime.now():
-                            for other_player in players_list:
-                                if other_player.id != p.id and not other_player.is_dead and other_player.role == "crewmate":
-                                    if p.am_i_near(other_player.position):
-                                        p.start_kill_cooldown()
-                                        print("I killed", other_player.id)
-                                        p.dead_bodies.append(other_player.id)
-                                        p.dead_bodies_positions.append(other_player.position)
-                                        break
-
-                    elif event.key == pygame.K_r:  # report
-                        if not p.is_dead:
-                            for corpse in corpses_list:
-                                if corpse.is_near(p.position):
-                                    p.in_meeting = True
-                            if report_btn.is_near(p.position):
-                                p.in_meeting = True
-
-                    elif event.key == pygame.K_p:  # portal
-                        if p.role == "impostor":
-                            p.y_change = 0  # zatrzymanie gracza
-                            game_map.y_change = 0
-                            p.x_change = 0
-                            game_map.x_change = 0
-
-                            for portal in portals:
-                                if portal.is_near(p.position):  # czy jest w okolicy portalu
-                                    game_map.x_offset -= portal.where_teleports[0] - p.position[0]
-                                    game_map.y_offset -= portal.where_teleports[1] - p.position[1]
-                                    p.position[0] = portal.where_teleports[0]
-                                    p.position[1] = portal.where_teleports[1]
-
+                    move_handler(p, event)
+                    task_handler(p, event)
+                    kill_handler(p, event, players_list)
+                    report_handler(p, event)
+                    portal_handler(p, event)
                 elif event.type == pygame.KEYUP:
-                    if event.key == pygame.K_DOWN or event.key == pygame.K_UP:
-                        p.y_change = 0
-                        game_map.y_change = 0
-
-                    elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                        p.x_change = 0
-                        game_map.x_change = 0
-
+                    stop_moving_handler(p, event)
+            check_task(p, players_list)
             p.move()
-            tasks_sprites.update()  # +report_button
+            tasks_sprites.update()  # +report_button ---> to nie moze byc razem, SINGLE RESPONSIBILITY
             corpses_sprites.update()
             backgrounds.update()
             game_map.move()  # przesuwanie mapy
@@ -417,113 +548,15 @@ class GameState:
                 p.unmove()
                 game_map.unmove()
             game_map.show(screen)
-
-            if p.in_task:  # czy gracz skonczyl taska
-                if p.task_until <= datetime.now():
-                    if p.task.task_type == "lights":  # czy gracz naprawil swiatla
-                        crewmate_vision = parameters.crewmate_vision
-                        for player in players_list:
-                            if player != p:
-                                player.remove_lights()
-                    if p.task.task_type == "trap":  # zastawiona pulapka
-                        for player in players_list:
-                            if player.role != "impostor":
-                                p.set_traps.append(p.task.position)
-                    p.end_task()
-
-            for i in range(len(players_list)):  # wyswietlanie graczy
-                if players_list[i].id == p.id:
-                    if p.is_dead:
-                        players_list[i].show(screen, ghost_image, p.screen_pos)
-                    else:
-                        if p.role == "impostor":
-                            players_list[i].show(screen, impostor_image, p.screen_pos)
-                        else:
-                            players_list[i].show(screen, images[i], p.screen_pos)
-
-                else:
-                    if p.role == "impostor":
-                        vision = impostor_vision
-                    else:
-                        vision = crewmate_vision
-                    position_diff = [players_list[i].position[0] - p.position[0],
-                                     players_list[i].position[1] - p.position[1]]
-                    if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                        tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                        if p.is_dead:
-                            if players_list[i].is_dead:
-                                players_list[i].show(screen, ghost_image, tmp_screen_pos)
-                            elif players_list[i].role == "impostor":
-                                players_list[i].show(screen, impostor_image, tmp_screen_pos)
-                            else:
-                                players_list[i].show(screen, images[i], tmp_screen_pos)
-                        else:
-                            if not players_list[i].is_dead:
-                                if players_list[i].role == "impostor" and p.role == "impostor":
-                                    players_list[i].show(screen, impostor_image, tmp_screen_pos)
-                                else:
-                                    players_list[i].show(screen, images[i], tmp_screen_pos)
-
-            for corpse in corpses_list:  # wyswietlanie cial
-                if p.role != "impostor":
-                    vision = crewmate_vision
-                    position_diff = [corpse.position[0] - p.position[0],
-                                     corpse.position[1] - p.position[1]]
-                    if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                        tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                        corpse.show(screen, dead_image, tmp_screen_pos)
-                else:
-                    vision = impostor_vision
-                    position_diff = [corpse.position[0] - p.position[0],
-                                     corpse.position[1] - p.position[1]]
-                    if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                        tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                        corpse.show(screen, dead_image, tmp_screen_pos)
-
-            for t in p.tasks:  # wyswietlanie taskow, pulapek
-                if p.role == "impostor":
-                    vision = impostor_vision
-                else:
-                    vision = crewmate_vision
-                position_diff = [t.position[0] - p.position[0],
-                            t.position[1] - p.position[1]]
-                if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                    tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    t.show(screen, a.task_img, tmp_screen_pos)
-
-            for portal in portals:  # wyswietlanie portali
-                if p.role == "impostor":
-                    vision = impostor_vision
-                else:
-                    vision = crewmate_vision
-                position_diff = [portal.position[0] - p.position[0],
-                            portal.position[1] - p.position[1]]
-                if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                    tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    portal.show(screen, a.portal_img, tmp_screen_pos)
-
-            if p.role != "impostor":  # wyswietlanie przycisku glosowania
-                vision = crewmate_vision
-                position_diff = [report_btn.position[0] - p.position[0],
-                                 report_btn.position[1] - p.position[1]]
-                if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                    tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    report_btn.show(screen, a.report_btn_img,  tmp_screen_pos)
-            else:
-                vision = impostor_vision
-                position_diff = [report_btn.position[0] - p.position[0],
-                                 report_btn.position[1] - p.position[1]]
-                if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
-                    tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    report_btn.show(screen, a.report_btn_img,  tmp_screen_pos)
-
-            # players.draw(screen)
+            show_players(p, players_list)
+            show_corpses(p)
+            show_portals(p)
+            show_report_button(p)
             pygame.display.update()
             n.p = p
 
     def endgame(self):
-        global who_won
-        if who_won == "crewmates":
+        if self.who_won == "crewmates":
             screen.blit(a.crewmates_won, (0, 0))
         else:
             screen.blit(a.impostors_won, (0, 0))
@@ -548,7 +581,6 @@ if __name__ == "__main__":
     player_image.fill((255, 0, 255))
     images = [player_image] * 10
 
-    game_state = GameState('menu')
+    game_st = GameState('menu')
     players = pygame.sprite.Group()
-
-    game_state.state_manager()
+    game_st.state_manager()
