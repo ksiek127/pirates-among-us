@@ -80,7 +80,7 @@ class GameState:
                                      vote_time=180, kill_distance=300, radius=50)
         self.lobby_buttons = pygame.sprite.Group()
         self.voting_buttons = pygame.sprite.Group()
-        self.start_btn = Button([500, 600], "../assets/startbutton.PNG", 250, 100)
+        self.start_btn = Button([500, 800], "../assets/startbutton.PNG", 250, 100)
         self.lobby_buttons.add(self.start_btn)
         self.skip_btn = Button([525, 860], "../assets/skipbutton.png", 150, 75)
         self.voting_buttons.add(self.skip_btn)
@@ -420,6 +420,7 @@ class GameState:
                         p.in_game = True
 
             self.screen.blit(self.a.lobby_img, (0, 0))
+            self.screen.blit(self.a.instructions_img, (300, 300))
             self.lobby_buttons.draw(self.screen)
             pygame.display.update()
 

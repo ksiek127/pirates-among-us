@@ -7,6 +7,7 @@ class Assets:
         self.font = pygame.font.SysFont("arial", 50)
         self.menu_img = pygame.image.load("../assets/menu.png")
         self.lobby_img = pygame.image.load("../assets/menu.png")
+        self.instructions_img = pygame.image.load("../assets/instructions.png")
         self.voting_img = pygame.image.load("../assets/voting.jpg")
         self.task_img = pygame.image.load("../assets/task.png")
         self.report_btn_img = pygame.image.load("../assets/report_button.png")
