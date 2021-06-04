@@ -8,7 +8,7 @@ class VotingButton(Button):
         super().__init__(position, img, width, height)
         self.name = name
         self.id = id
-        self.font = pygame.font.SysFont("comicsansms", 30)
+        self.font = pygame.font.SysFont("calibri", 30)
         self.textSurf = self.font.render(name, True, (255, 255, 255))
         w = self.textSurf.get_width()
         h = self.textSurf.get_height()

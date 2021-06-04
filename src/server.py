@@ -5,8 +5,8 @@ import random
 from objects.player import Player
 from datetime import timedelta
 
-# server = "192.168.1.94"  # Asia
-server = "192.168.1.61"  # K
+server = "192.168.1.94"  # Asia
+# server = "192.168.1.61"  # K
 # server = "192.168.1.102" # K2
 port = 5555
 

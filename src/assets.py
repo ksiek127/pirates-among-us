@@ -7,7 +7,7 @@ class Assets:
         self.font = pygame.font.SysFont("arial", 50)
         self.menu_img = pygame.image.load("../assets/menu.png")
         self.lobby_img = pygame.image.load("../assets/menu.png")
-        self.voting_img = pygame.image.load("../assets/voting.png")
+        self.voting_img = pygame.image.load("../assets/voting.jpg")
         self.task_img = pygame.image.load("../assets/task.png")
         self.report_btn_img = pygame.image.load("../assets/report_button.png")
         self.portal_img = pygame.image.load("../assets/portal.png")
@@ -17,9 +17,20 @@ class Assets:
         self.dead_image.fill((0, 0, 0))
         self.dead_img = pygame.image.load("../assets/dead_img.png")
         self.ghost_image = pygame.Surface([50, 50])
-        self.ghost_image.fill((0, 0, 255))
-        self.impostor_image = pygame.Surface([50, 50])
-        self.impostor_image.fill((255, 0, 0))
+        self.ghost_image.fill((255, 255, 255))
+        self.crewmate_colors = [(250, 100, 75), (250, 150, 50), (250, 250, 50), (150, 230, 50), (0, 200, 50),
+                                (0, 250, 250), (0, 50, 250), (150, 50, 250), (250, 0, 250), (150, 150, 150)]
+        self.images = []
+        self.impostor_images = []
+        for i in range(10):
+            player_image = pygame.Surface([50, 50])
+            player_image.fill(self.crewmate_colors[i])
+            self.images.append(player_image)
+            impostor_image = pygame.Surface([50, 50])
+            impostor_image.fill(self.crewmate_colors[i])
+            impostor_image.subsurface((10, 10), (30, 30)).fill((255, 0, 0))
+            self.impostor_images.append(impostor_image)
+
         self.display_width = 1200
         self.display_height = 1200
         self.tasks_positions = [[100, 200], [500, 200], [1100, 200],

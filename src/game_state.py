@@ -82,7 +82,7 @@ class GameState:
         self.voting_buttons = pygame.sprite.Group()
         self.start_btn = Button([500, 600], "../assets/startbutton.PNG", 250, 100)
         self.lobby_buttons.add(self.start_btn)
-        self.skip_btn = Button([100, 700], "../assets/skipbutton.png", 150, 75)
+        self.skip_btn = Button([525, 860], "../assets/skipbutton.png", 150, 75)
         self.voting_buttons.add(self.skip_btn)
         self.voting_players_buttons = []
         self.tasks_sprites = pygame.sprite.Group()
@@ -101,9 +101,8 @@ class GameState:
         self.backgrounds.add(self.game_map)
         self.n = Network()
         self.clock = pygame.time.Clock()
-        player_image = pygame.Surface([50, 50])  # zrobic 10 roznych kolorow
-        player_image.fill((255, 0, 255))
-        self.images = [player_image] * 10
+        self.images = self.a.images
+        self.impostor_images = self.a.impostor_images
 
     def set_tasks(self, p):
         if p.role == "crewmate":
@@ -121,12 +120,12 @@ class GameState:
     def create_voting_buttons(self, players_list):
         self.voting_buttons.add(self.skip_btn)
 
-        x, y, x_diff, y_diff = 150, 125, 500, 120
+        x, y, x_diff, y_diff = 150, 190, 500, 130
         voting_buttons_positions = [[x + (i * x_diff), y + (j * y_diff)] for i in range(2) for j in range(5)]
 
         for i in range(10):
             if not players_list[i].is_dead:
-                voting_btn = VotingButton(voting_buttons_positions[i], "../assets/votingbutton.png", 400, 75,
+                voting_btn = VotingButton(voting_buttons_positions[i], "../assets/votingbutton.png", 400, 125,
                                           players_list[i].name, i)
                 self.voting_players_buttons.append(voting_btn)
                 self.voting_buttons.add(voting_btn)
@@ -272,7 +271,7 @@ class GameState:
                     players_list[i].show(self.screen, self.a.ghost_image, p.screen_pos)
                 else:
                     if p.role == "impostor":
-                        players_list[i].show(self.screen, self.a.impostor_image, p.screen_pos)
+                        players_list[i].show(self.screen, self.impostor_images[i], p.screen_pos)
                     else:
                         players_list[i].show(self.screen, self.images[i], p.screen_pos)
 
@@ -289,13 +288,13 @@ class GameState:
                         if players_list[i].is_dead:
                             players_list[i].show(self.screen, self.a.ghost_image, tmp_screen_pos)
                         elif players_list[i].role == "impostor":
-                            players_list[i].show(self.screen, self.a.impostor_image, tmp_screen_pos)
+                            players_list[i].show(self.screen, self.impostor_images[i], tmp_screen_pos)
                         else:
                             players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
                     else:
                         if not players_list[i].is_dead:
                             if players_list[i].role == "impostor" and p.role == "impostor":
-                                players_list[i].show(self.screen, self.a.impostor_image, tmp_screen_pos)
+                                players_list[i].show(self.screen, self.impostor_images[i], tmp_screen_pos)
                             else:
                                 players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
 
