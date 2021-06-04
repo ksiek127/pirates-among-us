@@ -126,7 +126,8 @@ class GameState:
         for i in range(10):
             if not players_list[i].is_dead:
                 voting_btn = VotingButton(position=voting_buttons_positions[i], img="../assets/votingbutton.png",
-                                          width=400, height=125, name=players_list[i].name, id=i)
+                                          width=400, height=125, name=players_list[i].name, id=i,
+                                          color=self.a.crewmate_colors[i])
                 self.voting_players_buttons.append(voting_btn)
                 self.voting_buttons.add(voting_btn)
 
