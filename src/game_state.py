@@ -99,16 +99,9 @@ class GameState:
         self.game_map = Background("../assets/mapp.png", self.a.display_width, self.a.display_height)
         self.backgrounds = pygame.sprite.Group()
         self.backgrounds.add(self.game_map)
-        self.dead_image = pygame.Surface([50, 50])
-        self.dead_image.fill((0, 0, 0))
-        self.dead_img = pygame.image.load("../assets/dead_img.png")
-        self.ghost_image = pygame.Surface([50, 50])
-        self.ghost_image.fill((0, 0, 255))
-        self.impostor_image = pygame.Surface([50, 50])
-        self.impostor_image.fill((255, 0, 0))
         self.n = Network()
         self.clock = pygame.time.Clock()
-        player_image = pygame.Surface([50, 50])
+        player_image = pygame.Surface([50, 50])  # zrobic 10 roznych kolorow
         player_image.fill((255, 0, 255))
         self.images = [player_image] * 10
 
@@ -276,10 +269,10 @@ class GameState:
         for i in range(len(players_list)):  # wyswietlanie graczy
             if players_list[i].id == p.id:
                 if p.is_dead:
-                    players_list[i].show(self.screen, self.ghost_image, p.screen_pos)
+                    players_list[i].show(self.screen, self.a.ghost_image, p.screen_pos)
                 else:
                     if p.role == "impostor":
-                        players_list[i].show(self.screen, self.impostor_image, p.screen_pos)
+                        players_list[i].show(self.screen, self.a.impostor_image, p.screen_pos)
                     else:
                         players_list[i].show(self.screen, self.images[i], p.screen_pos)
 
@@ -294,15 +287,15 @@ class GameState:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
                     if p.is_dead:
                         if players_list[i].is_dead:
-                            players_list[i].show(self.screen, self.ghost_image, tmp_screen_pos)
+                            players_list[i].show(self.screen, self.a.ghost_image, tmp_screen_pos)
                         elif players_list[i].role == "impostor":
-                            players_list[i].show(self.screen, self.impostor_image, tmp_screen_pos)
+                            players_list[i].show(self.screen, self.a.impostor_image, tmp_screen_pos)
                         else:
                             players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
                     else:
                         if not players_list[i].is_dead:
                             if players_list[i].role == "impostor" and p.role == "impostor":
-                                players_list[i].show(self.screen, self.impostor_image, tmp_screen_pos)
+                                players_list[i].show(self.screen, self.a.impostor_image, tmp_screen_pos)
                             else:
                                 players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
 
@@ -314,14 +307,14 @@ class GameState:
                                  corpse.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    corpse.show(self.screen, self.dead_image, tmp_screen_pos)
+                    corpse.show(self.screen, self.a.dead_image, tmp_screen_pos)
             else:
                 vision = self.parameters.impostor_vision
                 position_diff = [corpse.position[0] - p.position[0],
                                  corpse.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    corpse.show(self.screen, self.dead_image, tmp_screen_pos)
+                    corpse.show(self.screen, self.a.dead_image, tmp_screen_pos)
 
     def show_tasks(self, p):
         for t in p.tasks:  # wyswietlanie taskow, pulapek
@@ -412,7 +405,7 @@ class GameState:
             for player in players_list:
                 if player.in_game:
                     p.role = players_list[p.id].role
-                    p.kill_distance = players_list[p.id].kill_distance  # czemu nie z parametrow?
+                    p.kill_distance = self.parameters.kill_distance
                     p.kill_cooldown = players_list[p.id].kill_cooldown
                     p.in_game = True
                     self.set_tasks(p)
