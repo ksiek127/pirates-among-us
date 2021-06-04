@@ -15,8 +15,8 @@ import time
 
 
 def init_portals(radius):
-    portal1 = Portal([800, 400], 200, 200, radius, [1700, 700])
-    portal2 = Portal([1500, 700], 200, 200, radius, [800, 400])
+    portal1 = Portal(position=[800, 400], width=200, height=200, radius=radius, where_teleports=[1700, 700])
+    portal2 = Portal(position=[1500, 700], width=200, height=200, radius=radius, where_teleports=[800, 400])
     return [portal1, portal2]
 
 
@@ -80,9 +80,9 @@ class GameState:
                                      vote_time=180, kill_distance=300, radius=50)
         self.lobby_buttons = pygame.sprite.Group()
         self.voting_buttons = pygame.sprite.Group()
-        self.start_btn = Button([500, 800], "../assets/startbutton.PNG", 250, 100)
+        self.start_btn = Button(position=[500, 800], img="../assets/startbutton.PNG", width=250, height=100)
         self.lobby_buttons.add(self.start_btn)
-        self.skip_btn = Button([525, 860], "../assets/skipbutton.png", 150, 75)
+        self.skip_btn = Button(position=[525, 860], img="../assets/skipbutton.png", width=150, height=75)
         self.voting_buttons.add(self.skip_btn)
         self.voting_players_buttons = []
         self.tasks_sprites = pygame.sprite.Group()
@@ -90,13 +90,13 @@ class GameState:
         self.tasks = []
         self.radius = self.parameters.radius
         self.portals = init_portals(self.radius)
-        self.report_btn = ReportButton([600, 200], 50, 39, self.radius)
+        self.report_btn = ReportButton(position=[600, 200], width=50, height=39, radius=self.radius)
         self.tasks_sprites.add(self.report_btn)
         self.corpses_sprites = pygame.sprite.Group()
         self.corpses_list = []
         self.corpses_positions_list = []
         self.death_positions_list = []
-        self.game_map = Background("../assets/mapp.png", self.a.display_width, self.a.display_height)
+        self.game_map = Background(filepath="../assets/mapp.png", width=self.a.display_width, height=self.a.display_height)
         self.backgrounds = pygame.sprite.Group()
         self.backgrounds.add(self.game_map)
         self.n = Network()
@@ -107,12 +107,12 @@ class GameState:
     def set_tasks(self, p):
         if p.role == "crewmate":
             for i in range(self.tasks_no):
-                task = Task(self.a.tasks_positions[i], 50, 75, self.radius, "task")
+                task = Task(position=self.a.tasks_positions[i], width=50, height=75, radius=self.radius, task_type="task")
                 self.tasks.append(task)
                 self.tasks_sprites.add(task)
         else:
             for trap_pos in self.a.trap_positions:
-                trap = Task(trap_pos, 50, 75, self.radius, "trap")
+                trap = Task(position=trap_pos, width=50, height=75, radius=self.radius, task_type="trap")
                 self.tasks.append(trap)
                 self.tasks_sprites.add(trap)
         p.add_tasks(self.tasks)
@@ -125,8 +125,8 @@ class GameState:
 
         for i in range(10):
             if not players_list[i].is_dead:
-                voting_btn = VotingButton(voting_buttons_positions[i], "../assets/votingbutton.png", 400, 125,
-                                          players_list[i].name, i)
+                voting_btn = VotingButton(position=voting_buttons_positions[i], img="../assets/votingbutton.png",
+                                          width=400, height=125, name=players_list[i].name, id=i)
                 self.voting_players_buttons.append(voting_btn)
                 self.voting_buttons.add(voting_btn)
 
@@ -140,7 +140,7 @@ class GameState:
         if len(death_positions_list) > len(self.corpses_positions_list):
             new_bodies_positions = [x for x in death_positions_list if x not in self.corpses_positions_list]
             for new in new_bodies_positions:
-                corpse = Corpse(new, 50, 50, self.radius)
+                corpse = Corpse(position=new, width=50, height=50, radius=self.radius)
                 self.corpses_sprites.add(corpse)
                 self.corpses_list.append(corpse)
                 self.corpses_positions_list.append(new)
@@ -151,19 +151,22 @@ class GameState:
 
     def vote(self, p, event):
         mouse_pos = event.pos
-        if self.skip_btn.pressed(mouse_pos):
+        if p.voted_for != -1:
+            print("już zagłosowałem na", p.voted_for)
+        elif self.skip_btn.pressed(mouse_pos):
             if not p.is_dead:
                 p.voted_for = -2  # "SKIP"
                 print("skipujemy!")
             else:
                 print("Martwi nie glosuja")
-        for btn in self.voting_players_buttons:
-            if btn.pressed(mouse_pos):
-                if not p.is_dead:
-                    p.voted_for = btn.id
-                    print("go", btn.id)
-                else:
-                    print("Martwi nie glosuja")
+        else:
+            for btn in self.voting_players_buttons:
+                if btn.pressed(mouse_pos):
+                    if not p.is_dead:
+                        p.voted_for = btn.id
+                        print("go", btn.id)
+                    else:
+                        print("Martwi nie glosuja")
 
     def check_if_endgame(self, players_list):
         impostors_alive = 0
@@ -361,7 +364,7 @@ class GameState:
         color_active = pygame.Color('black')
         color = color_inactive
         active = False
-        text = ''
+        text = 'Tu wpisz swe imie, kamracie!'
 
         while True:
             p = self.n.p
@@ -373,6 +376,7 @@ class GameState:
 
                     if input_box.collidepoint(mouse_pos):
                         active = not active
+                        text = ''
                     else:
                         active = False
                     color = color_active if active else color_inactive
@@ -390,10 +394,11 @@ class GameState:
                             text += event.unicode
 
             self.screen.blit(self.a.menu_img, (0, 0))
+            self.screen.blit(self.a.title_img, (150, 400))
 
-            txt_surface = self.a.font.render(text, True, color)
-            self.screen.blit(txt_surface, (input_box.x + 5, input_box.y - 4))
-            pygame.draw.rect(self.screen, color, input_box, 2)
+            txt_surface = self.a.font.render(text, True, 'black')
+            self.screen.blit(txt_surface, (input_box.x + 10, input_box.y + 15))
+            pygame.draw.rect(self.screen, color, input_box, 4)
 
             pygame.display.update()
 
@@ -430,9 +435,7 @@ class GameState:
         players_list = self.n.send(p)
         self.clear_voting_buttons()
         self.create_voting_buttons(players_list)
-
         alive_players = count_alive_players(players_list)
-
         time.sleep(2)
 
         while True:
@@ -440,6 +443,7 @@ class GameState:
             players_list = self.n.send(p)
             only_one_loser = True
             votes_dict = {}
+            skips_counter = 0
             loser = -1
             max_votes = 0
             for i in range(len(players_list)):
@@ -458,8 +462,11 @@ class GameState:
                     counter += 1
                 elif player.voted_for == -2:  # SKIP
                     counter += 1
+                    skips_counter += 1
             if counter == alive_players:
-                if only_one_loser:
+                if skips_counter > max_votes:
+                    print("Nikt nie został wygłosowany")
+                elif only_one_loser:
                     print("bye bye", loser)
                     if p.role == "impostor":
                         p.dead_bodies.append(loser)

@@ -4,10 +4,11 @@ import pygame
 
 class Assets:
     def __init__(self):
-        self.font = pygame.font.SysFont("arial", 50)
+        self.font = pygame.font.SysFont("calibri", 30)
         self.menu_img = pygame.image.load("../assets/menu.png")
         self.lobby_img = pygame.image.load("../assets/menu.png")
         self.instructions_img = pygame.image.load("../assets/instructions.png")
+        self.title_img = pygame.image.load("../assets/title.png")
         self.voting_img = pygame.image.load("../assets/voting.jpg")
         self.task_img = pygame.image.load("../assets/task.png")
         self.report_btn_img = pygame.image.load("../assets/report_button.png")
@@ -35,9 +36,9 @@ class Assets:
         self.display_width = 1200
         self.display_height = 1200
         self.tasks_positions = [[100, 200], [500, 200], [1100, 200],
-                           [100, 600], [500, 600], [1100, 600],
-                           [100, 1000], [500, 1000], [1100, 1000],
-                           [100, 1400]]
+                                [100, 600], [500, 600], [1100, 600],
+                                [100, 1000], [500, 1000], [1100, 1000],
+                                [100, 1400]]
 
         self.trap_positions = [
             [-100, 300], [100, 300]
