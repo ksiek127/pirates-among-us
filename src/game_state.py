@@ -518,7 +518,7 @@ class GameState:
                     self.stop_moving_handler(p, event)
             check_task(p, players_list)
             p.move()
-            self.tasks_sprites.update()  # +report_button ---> to nie moze byc razem, SINGLE RESPONSIBILITY
+            self.tasks_sprites.update()
             self.corpses_sprites.update()
             self.backgrounds.update()
             self.game_map.move()  # przesuwanie mapy
