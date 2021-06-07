@@ -43,7 +43,7 @@ class Assets:
         self.trap_positions = [
             [-100, 300], [100, 300]
         ]
-
+        # self.walls = []
         self.walls = [
             Wall([-10, 240], [290, 420]),
             Wall([200, 420], [260, 630]),
