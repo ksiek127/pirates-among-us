@@ -41,9 +41,6 @@ class Player(pygame.sprite.Sprite):
         self.position[0] -= self.x_change
         self.position[1] -= self.y_change
 
-    def show(self, screen, img, where):
-        screen.blit(img, where)
-
     def add_tasks(self, tasks):  # tasks - all tasks
         for i in range(len(tasks)):
             self.tasks.append(tasks[i])

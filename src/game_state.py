@@ -14,6 +14,10 @@ from network import Network
 import time
 
 
+def show(screen, img, where):
+    screen.blit(img, where)
+
+
 def init_portals(radius):
     portal1 = Portal(position=[800, 400], width=200, height=200, radius=radius, where_teleports=[1700, 700])
     portal2 = Portal(position=[1500, 700], width=200, height=200, radius=radius, where_teleports=[800, 400])
@@ -76,8 +80,8 @@ class GameState:
         self.a = Assets()
         self.size = (self.a.display_width, self.a.display_height)
         self.screen = pygame.display.set_mode(self.size)
-        self.parameters = Parameters(player_speed=5, crewmate_vision=500, impostor_vision=750, impaired_vision=50,
-                                     vote_time=180, kill_distance=300, radius=50)
+        self.parameters = Parameters(player_speed=5, crewmate_vision=500, impostor_vision=750, impaired_vision=300,
+                                     vote_time=180, kill_distance=300, radius=300)
         self.lobby_buttons = pygame.sprite.Group()
         self.voting_buttons = pygame.sprite.Group()
         self.start_btn = Button(position=[500, 800], img="../assets/startbutton.PNG", width=250, height=100)
@@ -272,12 +276,12 @@ class GameState:
         for i in range(len(players_list)):  # wyswietlanie graczy
             if players_list[i].id == p.id:
                 if p.is_dead:
-                    players_list[i].show(self.screen, self.a.ghost_image, p.screen_pos)
+                    show(self.screen, self.a.ghost_image, p.screen_pos)
                 else:
                     if p.role == "impostor":
-                        players_list[i].show(self.screen, self.impostor_images[i], p.screen_pos)
+                        show(self.screen, self.impostor_images[i], p.screen_pos)
                     else:
-                        players_list[i].show(self.screen, self.images[i], p.screen_pos)
+                        show(self.screen, self.images[i], p.screen_pos)
 
             else:
                 if p.role == "impostor":
@@ -290,17 +294,17 @@ class GameState:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
                     if p.is_dead:
                         if players_list[i].is_dead:
-                            players_list[i].show(self.screen, self.a.ghost_image, tmp_screen_pos)
+                            show(self.screen, self.a.ghost_image, tmp_screen_pos)
                         elif players_list[i].role == "impostor":
-                            players_list[i].show(self.screen, self.impostor_images[i], tmp_screen_pos)
+                            show(self.screen, self.impostor_images[i], tmp_screen_pos)
                         else:
-                            players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
+                            show(self.screen, self.images[i], tmp_screen_pos)
                     else:
                         if not players_list[i].is_dead:
                             if players_list[i].role == "impostor" and p.role == "impostor":
-                                players_list[i].show(self.screen, self.impostor_images[i], tmp_screen_pos)
+                                show(self.screen, self.impostor_images[i], tmp_screen_pos)
                             else:
-                                players_list[i].show(self.screen, self.images[i], tmp_screen_pos)
+                                show(self.screen, self.images[i], tmp_screen_pos)
 
     def show_corpses(self, p):
         for corpse in self.corpses_list:  # wyswietlanie cial
@@ -310,14 +314,14 @@ class GameState:
                                  corpse.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    corpse.show(self.screen, self.a.dead_image, tmp_screen_pos)
+                    show(self.screen, self.a.dead_image, tmp_screen_pos)
             else:
                 vision = self.parameters.impostor_vision
                 position_diff = [corpse.position[0] - p.position[0],
                                  corpse.position[1] - p.position[1]]
                 if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                     tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                    corpse.show(self.screen, self.a.dead_image, tmp_screen_pos)
+                    show(self.screen, self.a.dead_image, tmp_screen_pos)
 
     def show_tasks(self, p):
         for t in p.tasks:  # wyswietlanie taskow, pulapek
@@ -329,7 +333,7 @@ class GameState:
                              t.position[1] - p.position[1]]
             if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                 tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                t.show(self.screen, self.a.task_img, tmp_screen_pos)
+                show(self.screen, self.a.task_img, tmp_screen_pos)
 
     def show_portals(self, p):
         for portal in self.portals:  # wyswietlanie portali
@@ -341,7 +345,7 @@ class GameState:
                              portal.position[1] - p.position[1]]
             if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                 tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                portal.show(self.screen, self.a.portal_img, tmp_screen_pos)
+                show(self.screen, self.a.portal_img, tmp_screen_pos)
 
     def show_report_button(self, p):
         if p.role != "impostor":  # wyswietlanie przycisku glosowania
@@ -350,14 +354,14 @@ class GameState:
                              self.report_btn.position[1] - p.position[1]]
             if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                 tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                self.report_btn.show(self.screen, self.a.report_btn_img, tmp_screen_pos)
+                show(self.screen, self.a.report_btn_img, tmp_screen_pos)
         else:
             vision = self.parameters.impostor_vision
             position_diff = [self.report_btn.position[0] - p.position[0],
                              self.report_btn.position[1] - p.position[1]]
             if abs(position_diff[0]) <= vision and abs(position_diff[1]) <= vision:
                 tmp_screen_pos = [p.screen_pos[0] + position_diff[0], p.screen_pos[1] + position_diff[1]]
-                self.report_btn.show(self.screen, self.a.report_btn_img, tmp_screen_pos)
+                show(self.screen, self.a.report_btn_img, tmp_screen_pos)
 
     def menu(self):
         input_box = pygame.Rect(350, 700, 500, 50)
@@ -526,6 +530,7 @@ class GameState:
                 p.unmove()
                 self.game_map.unmove()
             self.game_map.show(self.screen)
+            self.show_tasks(p)
             self.show_players(p, players_list)
             self.show_corpses(p)
             self.show_portals(p)

@@ -21,6 +21,3 @@ class MapObject(pygame.sprite.Sprite):
             return True
         else:
             return False
-
-    def show(self, screen, img, where):
-        screen.blit(img, where)

@@ -72,7 +72,7 @@ def threaded_client(conn, player_idx):
 
     global already_set_roles
 
-    while True:  # klient wysyla swoja pozycje na serwer
+    while True:  # klient wysyla swoj obiekt na serwer
         try:
             data = pickle.loads(conn.recv(100000))
 
